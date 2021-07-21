@@ -74,13 +74,14 @@ class ImagesView(APIView):
 
 class ClothingImagesView(APIView):
     def post(self, request):
-        fashion_images = Clothings.objects.all().order_by("-id")
+        fashion_images = Clothings.objects.all().exclude(category='inter').order_by("-id")
         serializer = FileSerializer(fashion_images, many=True)
         return Response({"fashion_clothing_images": serializer.data})
 
 
 class PredictionsView(APIView):
     print("PredictionsView")
+
     def post(self, request, *args, **kwargs):
 
         prediction_serializer = PredictionsSerializer(data=request.data)
@@ -108,7 +109,6 @@ class PredictionsView(APIView):
         except Exception as e:
             print(e)
             return Response(prediction_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class ClothingsView(APIView):
@@ -151,7 +151,6 @@ class ClothingsView(APIView):
             # Convert the probabilities into percentages
             probabilities = probabilities * 100
             max_proba = np.amax(probabilities)
-            max_proba = round(max_proba, 2)
             a, pred_class = np.where(probabilities == max_proba)
             pred_class = pred_class.tolist()
             pred_class = pred_class[0]
@@ -160,8 +159,11 @@ class ClothingsView(APIView):
             probabilities_tolist = probabilities.tolist()
             print("probabilities_tolist", probabilities_tolist)
 
+            max_proba = round(max_proba, 2)
+
             return Response(
-                {"res_serialized": clothing_serializer.data, "max_proba": max_proba, "prediction_class": prediction_class},
+                {"res_serialized": clothing_serializer.data, "max_proba": max_proba,
+                 "prediction_class": prediction_class},
                 status=status.HTTP_201_CREATED)
         else:
             return Response(clothing_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
